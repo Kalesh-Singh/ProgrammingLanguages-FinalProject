@@ -1,0 +1,15 @@
+function inc(amt:int):function():int {
+  var sum = 0
+  function incrementer():int {
+    sum = sum + amt
+    return sum
+  }
+  return incrementer
+}
+var i = inc(7)
+print i()
+print i()
+print i()
+print i()
+print i()
+print i

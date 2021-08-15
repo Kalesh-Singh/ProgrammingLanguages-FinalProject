@@ -1,0 +1,40 @@
+function slow_multiply(x:int):function(int):int {
+  function bar(y:int, acc:int):int {
+    if y <= 0 {
+      return acc
+    }
+    return bar(y - 1, acc + x)
+  }
+  function baz(y:int):int {
+    return bar(y, 0)
+  }
+  print baz(7)
+  return baz
+}
+print slow_multiply(5)(10)
+print slow_multiply(2)(3) == 6
+
+function inc(amt:int):function():int {
+  var sum = 0
+  function incrementer():int {
+    sum = sum + amt
+    return sum
+  }
+  return incrementer
+}
+
+var i = inc(7)
+print i()
+print i()
+print i()
+print i()
+print i()
+print -1
+var j = inc(12)
+print j()
+print j()
+print j()
+print j()
+print j()
+print -1
+

@@ -1,0 +1,10 @@
+var prev = 0
+var cur = 1
+var i = 0
+while i < 10 {
+  print cur
+  var next = prev + cur
+  prev = cur
+  cur = next
+  i = i + 1
+}

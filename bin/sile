@@ -1,0 +1,116 @@
+#!/usr/bin/env python2
+
+import sys
+import os
+from getopt import getopt, GetoptError
+
+import sile
+
+class OptionParseException(Exception): pass
+
+message = '''sile -- the python version
+
+Example usage:
+
+    $ echo 'var x = 1 while x < 10 { print x x = x +1 }' | sile
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+
+Alternate form (supply a file):
+
+    $ sile example.sile
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+
+General Options
+    -h,--help      print this message
+
+Output Control Options
+    --tokens       stops after tokenization and prints the tokens
+    --ast          stops after parsing and prints a serialized ast
+    --typed-ast    stops after type checking and prints a serialized typed ast
+    --il           stops after il generation and prints a human friend il format
+    --visualize    for ast/typed-ast/il the graphviz will be printed instead
+
+Visualizing the intermediate form:
+
+    $ echo 'print 1 + 2 * 3' | sile --ast --visualize | dot -Tpng -o /tmp/tree.png
+'''
+
+def usage():
+    print message
+    sys.exit(0)
+
+def parse_options(args):
+    short = 'h'
+    long = ['help', 'tokens', 'ast', 'typed-ast', 'il', 'visualize']
+    try:
+        opts, args = getopt(args, short, long)
+    except GetoptError, e:
+        raise OptionParseException("could not process args: %s" % args)
+    visualize = False
+    mode = sile.EXEC
+    for opt, arg in opts:
+        if opt in ['-h', '--help']:
+            usage()
+        elif opt in ['--tokens']:
+            if mode != sile.EXEC:
+                raise OptionParseException("multiple modes supplied: %s" % args)
+            mode = sile.TOKENS
+        elif opt in ['--ast']:
+            if mode != sile.EXEC:
+                raise OptionParseException("multiple modes supplied: %s" % args)
+            mode = sile.AST
+        elif opt in ['--typed-ast']:
+            if mode != sile.EXEC:
+                raise OptionParseException("multiple modes supplied: %s" % args)
+            mode = sile.TYPED
+        elif opt in ['--il']:
+            if mode != sile.EXEC:
+                raise OptionParseException("multiple modes supplied: %s" % args)
+            mode = sile.IL
+        elif opt in ['--visualize']:
+            visualize = True
+        else:
+            raise OptionParseException("unknown arg: %s" % opt)
+
+    if visualize and not mode.visualizable:
+        raise OptionParseException("mode {} is not visualizable".format(mode))
+
+    if len(args) > 1:
+        raise OptionParseException("expected 1 argument (path to a single sile program) got: %s" % args)
+    if len(args) == 0:
+        return sile.Config(input=sys.stdin.read(), mode=mode, visualize=visualize)
+    path = args[0]
+    if not os.path.exists(path):
+        raise OptionParseException("path %s does not exist" % path)
+    with open(path) as f:
+        return sile.Config(input=f.read(), mode=mode, visualize=visualize)
+
+
+def main(args):
+    try:
+        config = parse_options(args)
+    except OptionParseException, e:
+        print >>sys.stderr, e
+        print 'try "sile --help"'
+        return 1
+    return sile.run(config)
+
+if __name__ == '__main__':
+    sys.exit(main(sys.argv[1:]))
+
